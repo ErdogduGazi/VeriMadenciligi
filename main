@@ -1,0 +1,143 @@
+import pandas as pd
+
+# Veri setini yükleme
+file_path = 'balance-scale.csv'
+data = pd.read_csv(file_path)
+
+# Veri setinin ilk birkaç satırını inceleme
+print(data.head())
+------------------------------------------
+
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+# Eksik verilerin doldurulması (örneğimizde eksik veri olmadığını varsayıyoruz)
+# Kategorik verilerin sayısal değerlere çevrilmesi (Label Encoding)
+le = LabelEncoder()
+data['Class Name'] = le.fit_transform(data['Class Name'])
+
+# Verilerin normalize edilmesi (StandardScaler)
+numeric_columns = ['Left-Weight', 'Left-Distance', 'Right-Weight', 'Right-Distance']
+scaler = StandardScaler()
+data[numeric_columns] = scaler.fit_transform(data[numeric_columns])
+
+print(data.head())
+--------------------------
+from sklearn.model_selection import train_test_split
+
+# Bağımsız ve bağımlı değişkenleri belirleme
+X = data[numeric_columns]
+y = data['Class Name']
+
+# Veriyi eğitim ve test setlerine ayırma
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+-------------------
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# KNN modelini oluşturma ve eğitme
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train, y_train)
+
+# Modeli test seti üzerinde değerlendirme
+y_pred_knn = knn.predict(X_test)
+
+# Doğruluk skoru ve diğer performans metriklerini hesaplama
+accuracy_knn = accuracy_score(y_test, y_pred_knn)
+print(f'KNN Doğruluk Skoru: {accuracy_knn}')
+print(classification_report(y_test, y_pred_knn))
+print(confusion_matrix(y_test, y_pred_knn))
+-----------------------
+from sklearn.naive_bayes import GaussianNB
+
+# Naive Bayes modelini oluşturma ve eğitme
+nb = GaussianNB()
+nb.fit(X_train, y_train)
+
+# Modeli test seti üzerinde değerlendirme
+y_pred_nb = nb.predict(X_test)
+
+# Doğruluk skoru ve diğer performans metriklerini hesaplama
+accuracy_nb = accuracy_score(y_test, y_pred_nb)
+print(f'Naive Bayes Doğruluk Skoru: {accuracy_nb}')
+print(classification_report(y_test, y_pred_nb))
+print(confusion_matrix(y_test, y_pred_nb))
+--------------------------
+from sklearn.tree import DecisionTreeClassifier
+
+# Karar ağacı modelini oluşturma ve eğitme
+dt = DecisionTreeClassifier(random_state=42)
+dt.fit(X_train, y_train)
+
+# Modeli test seti üzerinde değerlendirme
+y_pred_dt = dt.predict(X_test)
+
+# Doğruluk skoru ve diğer performans metriklerini hesaplama
+accuracy_dt = accuracy_score(y_test, y_pred_dt)
+print(f'Karar Ağacı Doğruluk Skoru: {accuracy_dt}')
+print(classification_report(y_test, y_pred_dt))
+print(confusion_matrix(y_test, y_pred_dt))
+-------------------
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Karışıklık matrislerini görselleştirme
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+cm_nb = confusion_matrix(y_test, y_pred_nb)
+cm_dt = confusion_matrix(y_test, y_pred_dt)
+
+fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+
+# KNN Karışıklık Matrisi
+ax[0].imshow(cm_knn, interpolation='nearest', cmap=plt.cm.Blues)
+ax[0].set_title('KNN Karışıklık Matrisi')
+tick_marks = np.arange(len(set(y_test)))
+ax[0].set_xticks(tick_marks)
+ax[0].set_yticks(tick_marks)
+for i in range(cm_knn.shape[0]):
+    for j in range(cm_knn.shape[1]):
+        ax[0].text(j, i, cm_knn[i, j], ha="center", va="center", color="red")
+
+# Naive Bayes Karışıklık Matrisi
+ax[1].imshow(cm_nb, interpolation='nearest', cmap=plt.cm.Blues)
+ax[1].set_title('Naive Bayes Karışıklık Matrisi')
+ax[1].set_xticks(tick_marks)
+ax[1].set_yticks(tick_marks)
+for i in range(cm_nb.shape[0]):
+    for j in range(cm_nb.shape[1]):
+        ax[1].text(j, i, cm_nb[i, j], ha="center", va="center", color="red")
+
+# Karar Ağacı Karışıklık Matrisi
+ax[2].imshow(cm_dt, interpolation='nearest', cmap=plt.cm.Blues)
+ax[2].set_title('Karar Ağacı Karışıklık Matrisi')
+ax[2].set_xticks(tick_marks)
+ax[2].set_yticks(tick_marks)
+for i in range(cm_dt.shape[0]):
+    for j in range(cm_dt.shape[1]):
+        ax[2].text(j, i, cm_dt[i, j], ha="center", va="center", color="red")
+
+plt.tight_layout()
+plt.show()
+
+# Doğruluk skorlarını karşılaştıran bar grafiği oluşturma
+accuracy_scores = {
+    'KNN': accuracy_knn,
+    'Naive Bayes': accuracy_nb,
+    'Karar Ağacı': accuracy_dt
+}
+
+models = list(accuracy_scores.keys())
+scores = list(accuracy_scores.values())
+
+plt.figure(figsize=(10, 5))
+bars = plt.bar(models, scores, color=['blue', 'green', 'orange'])
+
+plt.title('Model Doğruluk Skorları Karşılaştırması')
+plt.ylabel('Doğruluk Skoru')
+
+# Her bar'ın üzerine skoru yazdırma
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval, round(yval, 2), ha='center', va='bottom')
+
+plt.show()
+-----------------------
